@@ -200,6 +200,17 @@ public class LoginController : Controller
         return RedirectToAction("Index");
     }
 
+    /// <summary>
+    /// Cierra la sesión sin redirección. Usado por sendBeacon cuando se cierra la última pestaña.
+    /// </summary>
+    [HttpPost]
+    [IgnoreAntiforgeryToken]
+    public IActionResult LogoutFromTab()
+    {
+        HttpContext.Session.Clear();
+        return Ok();
+    }
+
     public IActionResult RecuperarPassword()
     {
         return View();
