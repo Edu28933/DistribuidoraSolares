@@ -1,0 +1,176 @@
+@model List<DistribuidoraSolares.Models.PermisoPantalla>
+@{
+    ViewData["Title"] = "Gestión de Permisos por Rol";
+    var roles = ViewBag.Roles as List<DistribuidoraSolares.Models.Rol> ?? new List<DistribuidoraSolares.Models.Rol>();
+    var pantallas = ViewBag.Pantallas as List<DistribuidoraSolares.Models.Pantalla> ?? new List<DistribuidoraSolares.Models.Pantalla>();
+    var rolIdSeleccionado = ViewBag.RolIdSeleccionado as int?;
+}
+
+<style>
+    .permisos-page { --perm-accent: #0d6efd; --perm-bg: #f8fafc; --perm-card: #fff; --perm-border: #e2e8f0; }
+    .permisos-page .hero { background: linear-gradient(135deg, #1e3a5f 0%, #0d6efd 100%); color: #fff; border-radius: 1rem; padding: 1.5rem 1.75rem; margin-bottom: 1.5rem; }
+    .permisos-page .hero h1 { margin: 0; font-size: 1.6rem; font-weight: 600; }
+    .permisos-page .hero p { margin: 0.35rem 0 0; opacity: 0.9; font-size: 0.95rem; }
+    .permisos-page .card-rol { border: none; border-radius: 1rem; box-shadow: 0 4px 14px rgba(0,0,0,.08); }
+    .permisos-page .card-rol .card-body { padding: 1.25rem 1.5rem; }
+    .permisos-page .card-rol .card-title { font-weight: 600; color: #1e293b; margin-bottom: 0.75rem; }
+    .permisos-page .card-tabla { border: none; border-radius: 1rem; box-shadow: 0 4px 14px rgba(0,0,0,.08); overflow: hidden; }
+    .permisos-page .tabla-permisos { margin-bottom: 0; }
+    .permisos-page .tabla-permisos thead th { background: #1e3a5f; color: #fff; font-weight: 600; padding: 1rem 0.75rem; border: none; font-size: 0.9rem; }
+    .permisos-page .tabla-permisos thead th.th-todo { text-align: center; min-width: 5rem; }
+    .permisos-page .tabla-permisos tbody tr { transition: background .15s; }
+    .permisos-page .tabla-permisos tbody tr:hover { background: #f1f5f9; }
+    .permisos-page .tabla-permisos tbody td { padding: 0.85rem 0.75rem; vertical-align: middle; border-color: #e2e8f0; }
+    .permisos-page .tabla-permisos tbody td:first-child { font-weight: 600; color: #334155; }
+    .permisos-page .tabla-permisos .celda-permiso { text-align: center; }
+    .permisos-page .tabla-permisos .celda-permiso input[type="checkbox"] { width: 1.15rem; height: 1.15rem; cursor: pointer; }
+    .permisos-page .tabla-permisos .celda-todo { text-align: center; }
+    .permisos-page .tabla-permisos .celda-todo .btn-todo { padding: 0.35rem 0.6rem; font-size: 0.8rem; border-radius: 0.5rem; }
+    .permisos-page .acciones-form { padding: 1.25rem 1.5rem; background: #f8fafc; border-top: 1px solid var(--perm-border); display: flex; gap: 0.75rem; flex-wrap: wrap; }
+    .permisos-page .btn-guardar { background: #0d6efd; border: none; padding: 0.6rem 1.25rem; border-radius: 0.5rem; font-weight: 500; }
+    .permisos-page .btn-guardar:hover { background: #0b5ed7; }
+    .permisos-page .aviso-vacio { border-radius: 1rem; padding: 1.5rem; }
+</style>
+
+<div class="container permisos-page">
+    <div class="hero">
+        <h1><i class="bi bi-shield-lock me-2"></i>Gestión de Permisos por Rol</h1>
+        <p>Asigne qué puede ver, crear, editar y eliminar cada rol en las pantallas del sistema.</p>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-check-circle me-2"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i>@TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card card-rol mb-4">
+        <div class="card-body">
+            <h5 class="card-title"><i class="bi bi-person-badge me-2"></i>Seleccionar Rol</h5>
+            <form method="get" asp-action="Index">
+                <div class="row align-items-end g-3">
+                    <div class="col-md-10">
+                        <label class="form-label fw-medium">Rol</label>
+                        <select name="rolId" class="form-select form-select-lg" onchange="this.form.submit()">
+                            <option value="">-- Seleccione un rol --</option>
+                            @foreach (var rol in roles)
+                            {
+                                if (rolIdSeleccionado == rol.RolId)
+                                {
+                                    <option value="@rol.RolId" selected>@rol.Nombre</option>
+                                }
+                                else
+                                {
+                                    <option value="@rol.RolId">@rol.Nombre</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-primary btn-lg w-100"><i class="bi bi-search me-1"></i> Cargar</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @if (rolIdSeleccionado.HasValue)
+    {
+        <form method="post" asp-action="GuardarPermisos" id="formPermisos">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="rolId" value="@rolIdSeleccionado" />
+
+            <div class="card card-tabla">
+                <div class="table-responsive">
+                    <table class="table table-bordered tabla-permisos">
+                        <thead>
+                            <tr>
+                                <th>Pantalla</th>
+                                <th>Controlador</th>
+                                <th class="celda-permiso">Puede Ver</th>
+                                <th class="celda-permiso">Puede Crear</th>
+                                <th class="celda-permiso">Puede Editar</th>
+                                <th class="celda-permiso">Puede Eliminar</th>
+                                <th class="th-todo">Todo la línea</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var pantalla in pantallas)
+                            {
+                                var permiso = Model.FirstOrDefault(p => p.PantallaId == pantalla.PantallaId);
+                                <tr data-pantalla-id="@pantalla.PantallaId">
+                                    <td><strong>@pantalla.Nombre</strong></td>
+                                    <td><span class="text-muted small">@(pantalla.Controlador)/@(pantalla.Accion ?? "Index")</span></td>
+                                    <td class="celda-permiso">
+                                        <input type="checkbox" class="permiso-campo" name="permisos[@pantalla.PantallaId].PuedeVer" value="true" @(permiso?.PuedeVer == true ? "checked" : "") />
+                                        <input type="hidden" name="permisos[@pantalla.PantallaId].PantallaId" value="@pantalla.PantallaId" />
+                                    </td>
+                                    <td class="celda-permiso">
+                                        <input type="checkbox" class="permiso-campo" name="permisos[@pantalla.PantallaId].PuedeCrear" value="true" @(permiso?.PuedeCrear == true ? "checked" : "") />
+                                    </td>
+                                    <td class="celda-permiso">
+                                        <input type="checkbox" class="permiso-campo" name="permisos[@pantalla.PantallaId].PuedeEditar" value="true" @(permiso?.PuedeEditar == true ? "checked" : "") />
+                                    </td>
+                                    <td class="celda-permiso">
+                                        <input type="checkbox" class="permiso-campo" name="permisos[@pantalla.PantallaId].PuedeEliminar" value="true" @(permiso?.PuedeEliminar == true ? "checked" : "") />
+                                    </td>
+                                    <td class="celda-todo">
+                                        <button type="button" class="btn btn-outline-primary btn-todo permiso-todo-fila" data-pantalla-id="@pantalla.PantallaId" title="Marcar/desmarcar todos los permisos de esta pantalla">
+                                            <i class="bi bi-check-all"></i> Todo
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="acciones-form">
+                    <button type="submit" class="btn btn-primary btn-guardar"><i class="bi bi-check2-square me-1"></i> Guardar Permisos</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-x-lg me-1"></i> Cancelar</a>
+                </div>
+            </div>
+        </form>
+    }
+    else
+    {
+        <div class="alert alert-info aviso-vacio shadow-sm">
+            <i class="bi bi-info-circle me-2"></i>Seleccione un rol para gestionar sus permisos por pantalla.
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.permiso-todo-fila').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var row = this.closest('tr');
+                    var checks = row.querySelectorAll('.permiso-campo[type="checkbox"]');
+                    var someUnchecked = Array.from(checks).some(function (c) { return !c.checked; });
+                    checks.forEach(function (c) { c.checked = someUnchecked; });
+                    this.querySelector('i').className = someUnchecked ? 'bi bi-check-all' : 'bi bi-dash-square';
+                });
+            });
+            document.querySelectorAll('tr[data-pantalla-id]').forEach(function (row) {
+                var checks = row.querySelectorAll('.permiso-campo[type="checkbox"]');
+                var btn = row.querySelector('.permiso-todo-fila i');
+                if (!btn) return;
+                function actualizarTodo() {
+                    var all = Array.from(checks).every(function (c) { return c.checked; });
+                    btn.className = all ? 'bi bi-check-all' : 'bi bi-dash-square';
+                }
+                checks.forEach(function (c) { c.addEventListener('change', actualizarTodo); });
+                actualizarTodo();
+            });
+        });
+    </script>
+}

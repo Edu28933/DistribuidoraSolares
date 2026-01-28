@@ -1,0 +1,68 @@
+@model List<DistribuidoraSolares.Models.Compra>
+@{
+    ViewData["Title"] = "Compras";
+    var proveedores = ViewBag.Proveedores as Dictionary<int, string> ?? new Dictionary<int, string>();
+}
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Compras</h1>
+        <a asp-action="Create" class="btn btn-success">Nueva Compra</a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <form asp-action="Index" method="get" class="mb-3">
+        <div class="input-group">
+            <input type="text" name="buscar" class="form-control" placeholder="Buscar compras..." value="@ViewBag.Buscar">
+            <button class="btn btn-outline-secondary" type="submit">Buscar</button>
+        </div>
+    </form>
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="alert alert-info">
+            <p>No hay compras registradas. <a asp-action="Create">Registra la primera compra</a></p>
+        </div>
+    }
+    else
+    {
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Fecha</th>
+                <th>Proveedor</th>
+                <th>Total</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var compra in Model)
+            {
+                <tr>
+                    <td>@compra.CompraId</td>
+                    <td>@compra.Fecha.ToString("g")</td>
+                    <td>@(proveedores.ContainsKey(compra.ProveedorId) ? proveedores[compra.ProveedorId] : $"Proveedor #{compra.ProveedorId}")</td>
+                    <td>Q@(compra.Total.ToString("N2"))</td>
+                    <td>@compra.Estado</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    }
+</div>

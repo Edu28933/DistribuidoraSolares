@@ -1,0 +1,92 @@
+@model DistribuidoraSolares.Models.Usuario
+@{
+    ViewData["Title"] = "Mi Perfil";
+}
+
+<div class="container">
+    <h1>Mi Perfil</h1>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Warning"] != null)
+    {
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            @TempData["Warning"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Información del Usuario</h5>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Perfil" method="post">
+                        <div class="mb-3">
+                            <label class="form-label">Nombre</label>
+                            <input type="text" class="form-control" value="@Model.Nombre" readonly />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Usuario Login</label>
+                            <input type="text" class="form-control" value="@Model.UsuarioLogin" readonly />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Correo Electrónico</label>
+                            <input type="email" name="email" class="form-control" value="@(ViewBag.Email ?? "")" />
+                            <small class="form-text text-muted">Para recuperación de contraseña</small>
+                        </div>
+
+                        <hr />
+
+                        <h5 class="mb-3">Cambiar Contraseña</h5>
+                        <div class="mb-3">
+                            <label class="form-label">Contraseña Actual</label>
+                            <input type="password" name="passwordActual" class="form-control" />
+                            <small class="form-text text-muted">Ingrese su contraseña actual para cambiarla</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Nueva Contraseña</label>
+                            <input type="password" name="passwordNueva" class="form-control" />
+                            <small class="form-text text-muted">Mínimo 4 caracteres</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Confirmar Nueva Contraseña</label>
+                            <input type="password" name="passwordConfirmar" class="form-control" />
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> <strong>Nota:</strong> Si no desea cambiar su contraseña, deje los campos de contraseña en blanco.
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Guardar Cambios
+                        </button>
+                        <a asp-action="Index" asp-controller="Dashboard" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver
+                        </a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

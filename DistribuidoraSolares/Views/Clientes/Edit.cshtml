@@ -1,0 +1,49 @@
+@model DistribuidoraSolares.Models.Cliente
+@{
+    ViewData["Title"] = "Editar Cliente";
+}
+
+<div class="container">
+    <h1>Editar Cliente</h1>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <form asp-action="Edit" method="post">
+        <input type="hidden" asp-for="ClienteId" />
+
+        <div class="mb-3">
+            <label asp-for="Nombre" class="form-label">Nombre</label>
+            <input asp-for="Nombre" class="form-control" required />
+            <span asp-validation-for="Nombre" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Telefono" class="form-label">Teléfono</label>
+            <input asp-for="Telefono" class="form-control" />
+            <span asp-validation-for="Telefono" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Nit" class="form-label">NIT</label>
+            <input asp-for="Nit" class="form-control" />
+            <span asp-validation-for="Nit" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Estado" class="form-label">Estado</label>
+            <select asp-for="Estado" class="form-select">
+                <option value="ACTIVO">ACTIVO</option>
+                <option value="INACTIVO">INACTIVO</option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Guardar</button>
+        <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>

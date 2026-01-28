@@ -1,0 +1,149 @@
+@{
+    ViewData["Title"] = "Transferir Productos entre Sucursales";
+    var sucursales = ViewBag.Sucursales as List<DistribuidoraSolares.Models.Sucursal> ?? new List<DistribuidoraSolares.Models.Sucursal>();
+    var productos = ViewBag.Productos as List<DistribuidoraSolares.Models.Producto> ?? new List<DistribuidoraSolares.Models.Producto>();
+}
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Transferir Productos entre Sucursales</h1>
+        <a asp-controller="Productos" asp-action="Index" class="btn btn-secondary">Volver a Productos</a>
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <form asp-action="Transferir" method="post" id="transferenciaForm">
+        @Html.AntiForgeryToken()
+        
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Datos de la Transferencia</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Producto <span class="text-danger">*</span></label>
+                        <select name="productoId" id="productoSelect" class="form-select" required>
+                            <option value="">Seleccione un producto</option>
+                            @foreach (var producto in productos)
+                            {
+                                <option value="@producto.ProductoId" data-nombre="@producto.Nombre">
+                                    @producto.Nombre (@producto.Codigo)
+                                </option>
+                            }
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label">Cantidad <span class="text-danger">*</span></label>
+                        <input type="number" name="cantidad" id="cantidadInput" class="form-control" min="1" required />
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label">Sucursal Origen <span class="text-danger">*</span></label>
+                        <select name="sucursalOrigenId" id="sucursalOrigenSelect" class="form-select" required>
+                            <option value="">Seleccione sucursal origen</option>
+                            @foreach (var sucursal in sucursales)
+                            {
+                                <option value="@sucursal.SucursalId">@sucursal.Nombre</option>
+                            }
+                        </select>
+                        <small class="text-muted" id="stockOrigenInfo"></small>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label">Sucursal Destino <span class="text-danger">*</span></label>
+                        <select name="sucursalDestinoId" id="sucursalDestinoSelect" class="form-select" required>
+                            <option value="">Seleccione sucursal destino</option>
+                            @foreach (var sucursal in sucursales)
+                            {
+                                <option value="@sucursal.SucursalId">@sucursal.Nombre</option>
+                            }
+                        </select>
+                        <small class="text-muted" id="stockDestinoInfo"></small>
+                    </div>
+                    
+                    <div class="col-md-12">
+                        <label class="form-label">Observación</label>
+                        <textarea name="observacion" class="form-control" rows="3" placeholder="Observaciones sobre la transferencia (opcional)"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-arrow-left-right"></i> Realizar Transferencia
+                </button>
+                <a asp-controller="Productos" asp-action="Index" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        // Cargar stock cuando se selecciona producto y sucursal origen
+        document.getElementById('productoSelect')?.addEventListener('change', cargarStockOrigen);
+        document.getElementById('sucursalOrigenSelect')?.addEventListener('change', cargarStockOrigen);
+        document.getElementById('sucursalDestinoSelect')?.addEventListener('change', cargarStockDestino);
+
+        async function cargarStockOrigen() {
+            const productoId = document.getElementById('productoSelect')?.value;
+            const sucursalId = document.getElementById('sucursalOrigenSelect')?.value;
+            const infoElement = document.getElementById('stockOrigenInfo');
+            
+            if (!productoId || !sucursalId) {
+                infoElement.textContent = '';
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/StockPorSucursal/Index?sucursalId=${sucursalId}`);
+                // Nota: Esto requiere una API endpoint, por ahora solo mostramos mensaje
+                infoElement.textContent = 'Verificando stock...';
+            } catch (error) {
+                infoElement.textContent = '';
+            }
+        }
+
+        async function cargarStockDestino() {
+            const productoId = document.getElementById('productoSelect')?.value;
+            const sucursalId = document.getElementById('sucursalDestinoSelect')?.value;
+            const infoElement = document.getElementById('stockDestinoInfo');
+            
+            if (!productoId || !sucursalId) {
+                infoElement.textContent = '';
+                return;
+            }
+            
+            infoElement.textContent = 'Sucursal destino seleccionada';
+        }
+
+        // Validar que origen y destino sean diferentes
+        document.getElementById('transferenciaForm')?.addEventListener('submit', function(e) {
+            const origen = document.getElementById('sucursalOrigenSelect')?.value;
+            const destino = document.getElementById('sucursalDestinoSelect')?.value;
+            
+            if (origen === destino) {
+                e.preventDefault();
+                alert('La sucursal de origen y destino no pueden ser la misma');
+                return false;
+            }
+            
+            return true;
+        });
+    </script>
+}

@@ -1,0 +1,96 @@
+@{
+    ViewData["Title"] = "Reporte: Rentabilidad";
+    var totalCompras = ViewBag.TotalCompras as decimal? ?? 0;
+    var totalVentas = ViewBag.TotalVentas as decimal? ?? 0;
+    var ganancia = ViewBag.Ganancia as decimal? ?? 0;
+    var margenGanancia = ViewBag.MargenGanancia as decimal? ?? 0;
+    var fechaDesde = ViewBag.FechaDesde as DateTime?;
+    var fechaHasta = ViewBag.FechaHasta as DateTime?;
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Reporte: Rentabilidad</h1>
+        <div>
+            <a asp-action="Index" class="btn btn-secondary">Volver a Reportes</a>
+            <button onclick="window.print()" class="btn btn-primary">Imprimir</button>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total Compras</h5>
+                    <h3>Q@(totalCompras.ToString("N2"))</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total Ventas</h5>
+                    <h3>Q@(totalVentas.ToString("N2"))</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card @(ganancia >= 0 ? "bg-primary" : "bg-warning") text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Ganancia</h5>
+                    <h3>Q@(ganancia.ToString("N2"))</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Margen de Ganancia</h5>
+                    <h3>@(margenGanancia.ToString("N2"))%</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header">
+            <h5 class="mb-0">Filtros Aplicados</h5>
+        </div>
+        <div class="card-body">
+            <p><strong>Período:</strong> @(fechaDesde?.ToString("dd/MM/yyyy") ?? "Desde el inicio") - @(fechaHasta?.ToString("dd/MM/yyyy") ?? "Hasta hoy")</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Análisis</h5>
+        </div>
+        <div class="card-body">
+            @if (ganancia >= 0)
+            {
+                <div class="alert alert-success">
+                    <strong>✅ Rentable:</strong> El negocio está generando ganancias en el período seleccionado.
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-danger">
+                    <strong>⚠️ Pérdidas:</strong> El negocio está generando pérdidas en el período seleccionado.
+                </div>
+            }
+            
+            <p><strong>Interpretación del Margen de Ganancia:</strong></p>
+            <ul>
+                <li>Si el margen es positivo, indica que las ventas superan a las compras.</li>
+                <li>Un margen alto indica mayor rentabilidad.</li>
+                <li>Un margen negativo indica que se están vendiendo productos por debajo del costo de compra.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<style>
+    @@media print {
+        .btn { display: none !important; }
+    }
+</style>

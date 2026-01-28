@@ -1,0 +1,206 @@
+@{
+    ViewData["Title"] = "Reportes";
+    var esSuperAdmin = ViewBag.EsSuperAdmin as bool? ?? false;
+    var sucursales = ViewBag.Sucursales as List<DistribuidoraSolares.Models.Sucursal> ?? new List<DistribuidoraSolares.Models.Sucursal>();
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Reportes</h1>
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row g-4">
+        <!-- Reporte de Ventas por Período -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-graph-up"></i> Ventas por Período</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Análisis de ventas realizadas en un rango de fechas específico. Incluye totales, cantidad de ventas y detalles.</p>
+                    <form asp-action="VentasPorPeriodo" method="get" class="mt-3">
+                        @if (esSuperAdmin)
+                        {
+                            <div class="mb-3">
+                                <label class="form-label">Sucursal</label>
+                                <select name="sucursalId" class="form-select">
+                                    <option value="">Todas las sucursales</option>
+                                    @foreach (var sucursal in sucursales)
+                                    {
+                                        <option value="@sucursal.SucursalId">@sucursal.Nombre</option>
+                                    }
+                                </select>
+                            </div>
+                        }
+                        <div class="mb-3">
+                            <label class="form-label">Fecha Desde</label>
+                            <input type="date" name="fechaDesde" class="form-control" value="@DateTime.Now.AddDays(-30).ToString("yyyy-MM-dd")">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Fecha Hasta</label>
+                            <input type="date" name="fechaHasta" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")">
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Generar Reporte</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reporte de Productos Más Vendidos -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-trophy"></i> Productos Más Vendidos</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Ranking de productos con mayor volumen de ventas y mayor valor total vendido en un período.</p>
+                    <form asp-action="ProductosMasVendidos" method="get" class="mt-3">
+                        @if (esSuperAdmin)
+                        {
+                            <div class="mb-3">
+                                <label class="form-label">Sucursal</label>
+                                <select name="sucursalId" class="form-select">
+                                    <option value="">Todas las sucursales</option>
+                                    @foreach (var sucursal in sucursales)
+                                    {
+                                        <option value="@sucursal.SucursalId">@sucursal.Nombre</option>
+                                    }
+                                </select>
+                            </div>
+                        }
+                        <div class="mb-3">
+                            <label class="form-label">Fecha Desde</label>
+                            <input type="date" name="fechaDesde" class="form-control" value="@DateTime.Now.AddDays(-30).ToString("yyyy-MM-dd")">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Fecha Hasta</label>
+                            <input type="date" name="fechaHasta" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Top N</label>
+                            <input type="number" name="topN" class="form-control" value="10" min="1" max="50">
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">Generar Reporte</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reporte de Stock Bajo -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Stock Bajo</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Productos con stock igual o por debajo del mínimo establecido. Útil para planificar compras.</p>
+                    <form asp-action="StockBajo" method="get" class="mt-3">
+                        @if (esSuperAdmin)
+                        {
+                            <div class="mb-3">
+                                <label class="form-label">Sucursal</label>
+                                <select name="sucursalId" class="form-select">
+                                    <option value="">Todas las sucursales</option>
+                                    @foreach (var sucursal in sucursales)
+                                    {
+                                        <option value="@sucursal.SucursalId">@sucursal.Nombre</option>
+                                    }
+                                </select>
+                            </div>
+                        }
+                        <button type="submit" class="btn btn-warning w-100">Generar Reporte</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reporte de Rentabilidad -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-cash-stack"></i> Rentabilidad</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Análisis de ganancias comparando ventas vs compras. Muestra margen de ganancia y rentabilidad.</p>
+                    <form asp-action="Rentabilidad" method="get" class="mt-3">
+                        @if (esSuperAdmin)
+                        {
+                            <div class="mb-3">
+                                <label class="form-label">Sucursal</label>
+                                <select name="sucursalId" class="form-select">
+                                    <option value="">Todas las sucursales</option>
+                                    @foreach (var sucursal in sucursales)
+                                    {
+                                        <option value="@sucursal.SucursalId">@sucursal.Nombre</option>
+                                    }
+                                </select>
+                            </div>
+                        }
+                        <div class="mb-3">
+                            <label class="form-label">Fecha Desde</label>
+                            <input type="date" name="fechaDesde" class="form-control" value="@DateTime.Now.AddDays(-30).ToString("yyyy-MM-dd")">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Fecha Hasta</label>
+                            <input type="date" name="fechaHasta" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")">
+                        </div>
+                        <button type="submit" class="btn btn-info w-100">Generar Reporte</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reporte de Clientes -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="bi bi-people"></i> Clientes</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Análisis de clientes con sus compras totales y cantidad de ventas realizadas.</p>
+                    <form asp-action="Clientes" method="get" class="mt-3">
+                        @if (esSuperAdmin)
+                        {
+                            <div class="mb-3">
+                                <label class="form-label">Sucursal</label>
+                                <select name="sucursalId" class="form-select">
+                                    <option value="">Todas las sucursales</option>
+                                    @foreach (var sucursal in sucursales)
+                                    {
+                                        <option value="@sucursal.SucursalId">@sucursal.Nombre</option>
+                                    }
+                                </select>
+                            </div>
+                        }
+                        <button type="submit" class="btn btn-secondary w-100">Generar Reporte</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Espacio para futuros reportes -->
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm border-dashed">
+                <div class="card-body d-flex flex-column justify-content-center align-items-center text-center">
+                    <i class="bi bi-plus-circle" style="font-size: 3rem; color: #6c757d;"></i>
+                    <h5 class="mt-3 text-muted">Más Reportes</h5>
+                    <p class="text-muted">Próximamente se agregarán más reportes según necesidades del negocio.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .border-dashed {
+        border: 2px dashed #dee2e6 !important;
+    }
+</style>

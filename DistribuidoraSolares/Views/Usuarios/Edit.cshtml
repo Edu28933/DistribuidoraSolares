@@ -1,0 +1,162 @@
+@model DistribuidoraSolares.Models.Usuario
+@{
+    ViewData["Title"] = "Editar Usuario";
+    var roles = ViewBag.Roles as List<DistribuidoraSolares.Models.Rol> ?? new List<DistribuidoraSolares.Models.Rol>();
+    var sucursales = ViewBag.Sucursales as List<DistribuidoraSolares.Models.Sucursal> ?? new List<DistribuidoraSolares.Models.Sucursal>();
+    var esSuperAdmin = ViewBag.EsSuperAdmin as bool? ?? false;
+    var esAdmin = ViewBag.EsAdmin as bool? ?? false;
+    var soloModificarRol = ViewBag.SoloModificarRol as bool? ?? false;
+    var soloLectura = ViewBag.SoloLectura as bool? ?? false;
+}
+
+<div class="container">
+    <h1>@(soloLectura ? "Ver Usuario" : "Editar Usuario")</h1>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <form asp-action="Edit" method="post">
+        <input type="hidden" asp-for="UsuarioId" />
+
+        <div class="mb-3">
+            <label asp-for="Nombre" class="form-label">Nombre</label>
+            @if (soloModificarRol || soloLectura)
+            {
+                <input asp-for="Nombre" class="form-control" readonly />
+            }
+            else
+            {
+                <input asp-for="Nombre" class="form-control" required />
+            }
+            <span asp-validation-for="Nombre" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="UsuarioLogin" class="form-label">Usuario Login</label>
+            @if (soloModificarRol || soloLectura)
+            {
+                <input asp-for="UsuarioLogin" class="form-control" readonly />
+            }
+            else
+            {
+                <input asp-for="UsuarioLogin" class="form-control" required />
+            }
+            <span asp-validation-for="UsuarioLogin" class="text-danger"></span>
+        </div>
+
+        @if (esSuperAdmin)
+        {
+            <div class="mb-3">
+                <label class="form-label">Correo Electrónico</label>
+                <input type="email" name="email" class="form-control" value="@ViewBag.Email" />
+                <small class="form-text text-muted">Para recuperación de contraseña</small>
+            </div>
+        }
+
+        @if (esSuperAdmin)
+        {
+            <div class="mb-3">
+                <label class="form-label">Nueva Contraseña (dejar en blanco para mantener la actual)</label>
+                <input type="password" name="password" class="form-control" />
+                <small class="form-text text-muted">Solo complete este campo si desea cambiar la contraseña</small>
+            </div>
+        }
+
+        <div class="mb-3">
+            <label asp-for="RolId" class="form-label">Rol</label>
+            @if (soloLectura)
+            {
+                <select asp-for="RolId" class="form-select" disabled id="rolSelect">
+                    <option value="">Seleccione un rol</option>
+                    @foreach (var rol in roles)
+                    {
+                        <option value="@rol.RolId">@rol.Nombre</option>
+                    }
+                </select>
+                <input type="hidden" asp-for="RolId" />
+            }
+            else
+            {
+                <select asp-for="RolId" class="form-select" required id="rolSelect" onchange="actualizarSucursalSelector()">
+                    <option value="">Seleccione un rol</option>
+                    @foreach (var rol in roles)
+                    {
+                        <option value="@rol.RolId">@rol.Nombre</option>
+                    }
+                </select>
+            }
+            <span asp-validation-for="RolId" class="text-danger"></span>
+        </div>
+
+        @if (esSuperAdmin)
+        {
+            <div class="mb-3" id="sucursalGroup">
+                <label asp-for="SucursalId" class="form-label">Sucursal</label>
+                <select asp-for="SucursalId" class="form-select">
+                    <option value="">Sin sucursal (SuperAdmin/Contador)</option>
+                    @foreach (var sucursal in sucursales)
+                    {
+                        <option value="@sucursal.SucursalId">@sucursal.Nombre</option>
+                    }
+                </select>
+                <small class="form-text text-muted">SuperAdmin y Contador no requieren sucursal (ven todo). Admin y Vendedor deben tener sucursal asignada.</small>
+            </div>
+        }
+        else
+        {
+            <input type="hidden" asp-for="SucursalId" />
+        }
+
+        @if (esSuperAdmin)
+        {
+            <div class="mb-3">
+                <label asp-for="Estado" class="form-label">Estado</label>
+                <select asp-for="Estado" class="form-select">
+                    <option value="ACTIVO">ACTIVO</option>
+                    <option value="INACTIVO">INACTIVO</option>
+                </select>
+            </div>
+        }
+        else
+        {
+            <input type="hidden" asp-for="Estado" />
+        }
+
+        @if (!soloLectura)
+        {
+            <button type="submit" class="btn btn-primary">Guardar</button>
+        }
+        <a asp-action="Index" class="btn btn-secondary">Volver</a>
+    </form>
+</div>
+
+@if (esSuperAdmin)
+{
+    <script>
+        function actualizarSucursalSelector() {
+            var rolSelect = document.getElementById('rolSelect');
+            var sucursalSelect = document.querySelector('select[name="SucursalId"]');
+            if (!rolSelect || !sucursalSelect) return;
+            
+            var rolNombre = rolSelect.options[rolSelect.selectedIndex].text.toUpperCase();
+            
+            // Si es SuperAdmin o Contador, hacer opcional la sucursal
+            if (rolNombre.includes('SUPERADMIN') || rolNombre.includes('CONTADOR')) {
+                sucursalSelect.required = false;
+            } else {
+                // Admin y Vendedor requieren sucursal
+                sucursalSelect.required = true;
+            }
+        }
+        
+        // Ejecutar al cargar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            actualizarSucursalSelector();
+        });
+    </script>
+}

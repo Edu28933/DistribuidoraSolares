@@ -1,0 +1,177 @@
+@model DistribuidoraSolares.Models.Venta
+@{
+    ViewData["Title"] = "Factura";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Factura</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            color: #333;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #333;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .company-name {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .invoice-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+        .invoice-info div {
+            flex: 1;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .total-section {
+            margin-top: 20px;
+            text-align: right;
+        }
+        .total-row {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        @@media print {
+            body {
+                margin: 0;
+            }
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="company-name">Distribuidora Solares</div>
+        <div>FACTURA</div>
+    </div>
+
+    <div class="invoice-info">
+        <div>
+            <strong>Fecha:</strong> <span id="fechaHora" data-fecha="@Model.FechaHora.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffZ")">@Model.FechaHora.ToString("dd/MM/yyyy HH:mm")</span><br>
+            <strong>Cliente:</strong> @(Model.Cliente?.Nombre ?? "Cliente General")<br>
+            <strong>Vendedor:</strong> @(Model.Usuario?.Nombre ?? "N/A")
+        </div>
+        <div class="text-right">
+            <strong>Método de Pago:</strong> @(Model.MetodoPago?.Nombre ?? "N/A")<br>
+            <strong>Tipo de Venta:</strong> @Model.TipoVenta<br>
+            @if (!string.IsNullOrEmpty(Model.Observacion))
+            {
+                <strong>Observación:</strong> @Model.Observacion<br>
+            }
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Producto</th>
+                <th class="text-right">Cantidad</th>
+                <th class="text-right">Precio Unitario</th>
+                <th class="text-right">Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Detalles != null && Model.Detalles.Any())
+            {
+                @foreach (var detalle in Model.Detalles)
+                {
+                    <tr>
+                        <td>@(detalle.Producto?.Nombre ?? $"Producto #{detalle.ProductoId}")</td>
+                        <td class="text-right">@detalle.Cantidad</td>
+                        <td class="text-right">Q@(detalle.PrecioUnitario.ToString("N2"))</td>
+                        <td class="text-right">Q@(detalle.Subtotal.ToString("N2"))</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="4" class="text-right">No hay detalles disponibles</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="total-section">
+        <div>
+            <strong>Subtotal:</strong> Q@(Model.TotalBruto.ToString("N2"))
+        </div>
+        @if (Model.DescuentoManual > 0)
+        {
+            <div>
+                <strong>Descuento:</strong> Q@(Model.DescuentoManual.ToString("N2"))
+            </div>
+        }
+        <div class="total-row">
+            <strong>TOTAL: Q@(Model.TotalNeto.ToString("N2"))</strong>
+        </div>
+    </div>
+
+    <div style="margin-top: 50px; text-align: center; font-size: 12px; color: #666;">
+        <p>Gracias por su compra</p>
+        <p>Esta es una factura generada electrónicamente</p>
+    </div>
+
+    <div class="no-print" style="margin-top: 30px; text-align: center;">
+        <button onclick="window.print()" class="btn btn-primary">Imprimir</button>
+        <button onclick="window.close()" class="btn btn-secondary">Cerrar</button>
+    </div>
+
+    <script>
+        // Convertir fecha UTC a hora local del cliente (Guatemala)
+        (function() {
+            const fechaElement = document.getElementById('fechaHora');
+            if (fechaElement) {
+                const fechaUTC = fechaElement.getAttribute('data-fecha');
+                if (fechaUTC) {
+                    try {
+                        const fecha = new Date(fechaUTC);
+                        // Formatear en formato local (dd/MM/yyyy HH:mm)
+                        const dia = String(fecha.getDate()).padStart(2, '0');
+                        const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+                        const año = fecha.getFullYear();
+                        const horas = String(fecha.getHours()).padStart(2, '0');
+                        const minutos = String(fecha.getMinutes()).padStart(2, '0');
+                        const fechaLocal = `${dia}/${mes}/${año} ${horas}:${minutos}`;
+                        fechaElement.textContent = fechaLocal;
+                    } catch (e) {
+                        console.error('Error al formatear fecha:', e);
+                    }
+                }
+            }
+        })();
+    </script>
+</body>
+</html>

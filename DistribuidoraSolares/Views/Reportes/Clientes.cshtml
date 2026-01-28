@@ -1,0 +1,62 @@
+@model List<DistribuidoraSolares.Models.ReporteCliente>
+@{
+    ViewData["Title"] = "Reporte: Clientes";
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Reporte: Clientes</h1>
+        <div>
+            <a asp-action="Index" class="btn btn-secondary">Volver a Reportes</a>
+            <button onclick="window.print()" class="btn btn-primary">Imprimir</button>
+        </div>
+    </div>
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Cliente</th>
+                        <th class="text-end">Cantidad de Ventas</th>
+                        <th class="text-end">Total Compras</th>
+                        <th class="text-end">Promedio por Venta</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var cliente in Model)
+                    {
+                        var promedio = cliente.CantidadVentas > 0 ? (cliente.TotalCompras / cliente.CantidadVentas) : 0;
+                        <tr>
+                            <td>@cliente.Cliente.Nombre</td>
+                            <td class="text-end">@cliente.CantidadVentas</td>
+                            <td class="text-end"><strong>Q@(cliente.TotalCompras.ToString("N2"))</strong></td>
+                            <td class="text-end">Q@(promedio.ToString("N2"))</td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot class="table-secondary">
+                    <tr>
+                        <th>Total</th>
+                        <th class="text-end">@(Model.Sum(c => c.CantidadVentas))</th>
+                        <th class="text-end">Q@(Model.Sum(c => c.TotalCompras).ToString("N2"))</th>
+                        <th></th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info">
+            <p>No hay clientes con ventas registradas.</p>
+        </div>
+    }
+</div>
+
+<style>
+    @@media print {
+        .btn { display: none !important; }
+    }
+</style>

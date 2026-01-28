@@ -1,0 +1,156 @@
+@model DistribuidoraSolares.Models.Venta
+@{
+    ViewData["Title"] = "Detalle de Venta";
+}
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Detalle de Venta #@Model.VentaId</h1>
+        <a asp-action="Index" class="btn btn-secondary">Volver a Ventas</a>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Información de la Venta</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">ID de Venta:</dt>
+                        <dd class="col-sm-8">@Model.VentaId</dd>
+                        
+                        <dt class="col-sm-4">Fecha y Hora:</dt>
+                        <dd class="col-sm-8">@Model.FechaHora.ToString("dd/MM/yyyy HH:mm")</dd>
+                        
+                        <dt class="col-sm-4">Cliente:</dt>
+                        <dd class="col-sm-8">@(Model.Cliente?.Nombre ?? "Sin cliente")</dd>
+                        
+                        <dt class="col-sm-4">Usuario:</dt>
+                        <dd class="col-sm-8">@(Model.Usuario?.Nombre ?? "N/A")</dd>
+                        
+                        <dt class="col-sm-4">Método de Pago:</dt>
+                        <dd class="col-sm-8">@(Model.MetodoPago?.Nombre ?? "N/A")</dd>
+                        
+                        <dt class="col-sm-4">Tipo de Venta:</dt>
+                        <dd class="col-sm-8">
+                            @if (Model.TipoVenta == "PERDIDA")
+                            {
+                                <span class="badge bg-danger">@Model.TipoVenta</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-success">@Model.TipoVenta</span>
+                            }
+                        </dd>
+                        
+                        @if (Model.Sucursal != null)
+                        {
+                            <dt class="col-sm-4">Sucursal:</dt>
+                            <dd class="col-sm-8">@Model.Sucursal.Nombre</dd>
+                        }
+                        
+                        <dt class="col-sm-4">Estado:</dt>
+                        <dd class="col-sm-8">
+                            @if (Model.Estado == "ACTIVO")
+                            {
+                                <span class="badge bg-success">@Model.Estado</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">@Model.Estado</span>
+                            }
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Totales</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-6">Total Bruto:</dt>
+                        <dd class="col-sm-6">Q@(Model.TotalBruto.ToString("N2"))</dd>
+                        
+                        <dt class="col-sm-6">Descuento Manual:</dt>
+                        <dd class="col-sm-6">Q@(Model.DescuentoManual.ToString("N2"))</dd>
+                        
+                        <dt class="col-sm-6"><strong>Total Neto:</strong></dt>
+                        <dd class="col-sm-6"><strong>Q@(Model.TotalNeto.ToString("N2"))</strong></dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.Observacion))
+    {
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5 class="mb-0">Observaciones</h5>
+            </div>
+            <div class="card-body">
+                <p>@Model.Observacion</p>
+            </div>
+        </div>
+    }
+
+    <div class="card">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0">Productos de la Venta</h5>
+        </div>
+        <div class="card-body">
+            @if (Model.Detalles == null || !Model.Detalles.Any())
+            {
+                <p class="text-muted">No hay productos registrados en esta venta.</p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Producto</th>
+                                <th class="text-end">Cantidad</th>
+                                <th class="text-end">Precio Lista</th>
+                                <th class="text-end">Precio Unitario</th>
+                                <th class="text-end">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var detalle in Model.Detalles)
+                            {
+                                <tr>
+                                    <td>@(detalle.Producto?.Nombre ?? $"Producto ID: {detalle.ProductoId}")</td>
+                                    <td class="text-end">@detalle.Cantidad</td>
+                                    <td class="text-end">Q@(detalle.PrecioLista.ToString("N2"))</td>
+                                    <td class="text-end">Q@(detalle.PrecioUnitario.ToString("N2"))</td>
+                                    <td class="text-end"><strong>Q@(detalle.Subtotal.ToString("N2"))</strong></td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot class="table-secondary">
+                            <tr>
+                                <th colspan="4" class="text-end">Total:</th>
+                                <th class="text-end">Q@(Model.TotalNeto.ToString("N2"))</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="mt-3">
+        <a asp-action="Index" class="btn btn-secondary">Volver a Ventas</a>
+        @if (Model.Estado == "ACTIVO")
+        {
+            <a asp-action="Edit" asp-route-id="@Model.VentaId" class="btn btn-warning">Editar Venta</a>
+            <a asp-action="ImprimirFactura" asp-route-id="@Model.VentaId" target="_blank" class="btn btn-primary">Imprimir Factura</a>
+        }
+    </div>
+</div>

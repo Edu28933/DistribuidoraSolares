@@ -1,0 +1,120 @@
+@{
+    ViewData["Title"] = "Reporte: Ventas por Período";
+    var ventas = ViewBag.Ventas as List<DistribuidoraSolares.Models.Venta> ?? new List<DistribuidoraSolares.Models.Venta>();
+    var totalVentas = ViewBag.TotalVentas as decimal? ?? 0;
+    var cantidadVentas = ViewBag.CantidadVentas as int? ?? 0;
+    var fechaDesde = ViewBag.FechaDesde as DateTime?;
+    var fechaHasta = ViewBag.FechaHasta as DateTime?;
+    var sucursales = ViewBag.Sucursales as List<DistribuidoraSolares.Models.Sucursal> ?? new List<DistribuidoraSolares.Models.Sucursal>();
+    var sucursalId = ViewBag.SucursalId as int?;
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Reporte: Ventas por Período</h1>
+        <div>
+            <a asp-action="Index" class="btn btn-secondary">Volver a Reportes</a>
+            <button onclick="window.print()" class="btn btn-primary">Imprimir</button>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total de Ventas</h5>
+                    <h3>Q@(totalVentas.ToString("N2"))</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Cantidad de Ventas</h5>
+                    <h3>@cantidadVentas</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Promedio por Venta</h5>
+                    <h3>Q@(cantidadVentas > 0 ? (totalVentas / cantidadVentas).ToString("N2") : "0.00")</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header">
+            <h5 class="mb-0">Filtros Aplicados</h5>
+        </div>
+        <div class="card-body">
+            <p><strong>Período:</strong> @(fechaDesde?.ToString("dd/MM/yyyy") ?? "Desde el inicio") - @(fechaHasta?.ToString("dd/MM/yyyy") ?? "Hasta hoy")</p>
+            @if (sucursalId.HasValue)
+            {
+                var sucursal = sucursales.FirstOrDefault(s => s.SucursalId == sucursalId.Value);
+                <p><strong>Sucursal:</strong> @(sucursal?.Nombre ?? "N/A")</p>
+            }
+            else
+            {
+                <p><strong>Sucursal:</strong> Todas las sucursales</p>
+            }
+        </div>
+    </div>
+
+    @if (ventas.Any())
+    {
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Fecha</th>
+                        <th>Cliente</th>
+                        <th>Vendedor</th>
+                        <th class="text-end">Total</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var venta in ventas)
+                    {
+                        <tr>
+                            <td>@venta.VentaId</td>
+                            <td>@venta.FechaHora.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>@(venta.Cliente?.Nombre ?? "Sin cliente")</td>
+                            <td>@(venta.Usuario?.Nombre ?? "N/A")</td>
+                            <td class="text-end">Q@(venta.TotalNeto.ToString("N2"))</td>
+                            <td>
+                                <span class="badge @(venta.Estado == "ACTIVO" ? "bg-success" : "bg-secondary")">
+                                    @venta.Estado
+                                </span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot class="table-secondary">
+                    <tr>
+                        <th colspan="4" class="text-end">Total:</th>
+                        <th class="text-end">Q@(totalVentas.ToString("N2"))</th>
+                        <th></th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info">
+            <p>No hay ventas registradas en el período seleccionado.</p>
+        </div>
+    }
+</div>
+
+<style>
+    @@media print {
+        .btn { display: none !important; }
+        .card-header { page-break-inside: avoid; }
+    }
+</style>

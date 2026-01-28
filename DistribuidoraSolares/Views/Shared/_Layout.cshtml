@@ -1,0 +1,209 @@
+@inject DistribuidoraSolares.Services.IPermisoPantallaService PermisoPantallaService
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - DistribuidoraSolares</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/DistribuidoraSolares.styles.css" asp-append-version="true" />
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container-fluid">
+                <a class="navbar-brand" asp-controller="Dashboard" asp-action="Index">Distribuidora Solares</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        @{
+                            var rolNombre = Context.Session.GetString("RolNombre") ?? "";
+                            var usuarioId = Context.Session.GetInt32("UsuarioId");
+                            var esSuperAdmin = rolNombre.Equals("SuperAdmin", StringComparison.OrdinalIgnoreCase);
+                            var esAdmin = rolNombre.Equals("Admin", StringComparison.OrdinalIgnoreCase);
+                            
+                            // Función helper para verificar permisos (síncrona)
+                            bool TienePermiso(string controlador, string accion)
+                            {
+                                if (esSuperAdmin || esAdmin)
+                                    return true;
+                                
+                                if (usuarioId == null)
+                                    return false;
+                                
+                                try
+                                {
+                                    return PermisoPantallaService.TienePermisoAsync(usuarioId.Value, controlador, accion, "Ver").GetAwaiter().GetResult();
+                                }
+                                catch
+                                {
+                                    return false;
+                                }
+                            }
+                        }
+                        
+                        @if (TienePermiso("Dashboard", "Index"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
+                            </li>
+                        }
+                        
+                        @if (TienePermiso("Categorias", "Index"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Categorias" asp-action="Index">Categorías</a>
+                            </li>
+                        }
+                        
+                        @if (TienePermiso("Productos", "Index"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Productos" asp-action="Index">Productos</a>
+                            </li>
+                        }
+                        
+                        @if (TienePermiso("Compras", "Index"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Compras" asp-action="Index">Compras</a>
+                            </li>
+                        }
+                        
+                        @if (TienePermiso("Ventas", "Index"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Ventas" asp-action="Index">Ventas</a>
+                            </li>
+                        }
+                        
+                        @if (TienePermiso("Reservas", "Index"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Reservas" asp-action="Index">Reservas</a>
+                            </li>
+                        }
+                        
+                        @if (TienePermiso("Caja", "Index"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Caja" asp-action="Index">Caja</a>
+                            </li>
+                        }
+                        
+                        @if (TienePermiso("Reportes", "Index"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Reportes" asp-action="Index">Reportes</a>
+                            </li>
+                        }
+                        
+                        @if (esSuperAdmin)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Sucursales" asp-action="Index">Sucursales</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="StockPorSucursal" asp-action="Index">Stock por Sucursal</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="TransferenciasProductos" asp-action="Index">Transferir Productos</a>
+                            </li>
+                        }
+                        
+                        @{
+                            var tieneAlgunPermisoAdmin = TienePermiso("Clientes", "Index") ||
+                                                         TienePermiso("Proveedores", "Index") ||
+                                                         TienePermiso("Usuarios", "Index") ||
+                                                         TienePermiso("Roles", "Index") ||
+                                                         TienePermiso("Permisos", "Index") ||
+                                                         TienePermiso("MetodosPago", "Index") ||
+                                                         TienePermiso("MovimientosInventario", "Index");
+                        }
+                        
+                        @if (tieneAlgunPermisoAdmin)
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-dark" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Administración
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="adminDropdown">
+                                    @if (TienePermiso("Clientes", "Index"))
+                                    {
+                                        <li><a class="dropdown-item" asp-controller="Clientes" asp-action="Index">Clientes</a></li>
+                                    }
+                                    @if (TienePermiso("Proveedores", "Index"))
+                                    {
+                                        <li><a class="dropdown-item" asp-controller="Proveedores" asp-action="Index">Proveedores</a></li>
+                                    }
+                                    @if (TienePermiso("Usuarios", "Index"))
+                                    {
+                                        <li><a class="dropdown-item" asp-controller="Usuarios" asp-action="Index">Usuarios</a></li>
+                                    }
+                                    @if (TienePermiso("Roles", "Index"))
+                                    {
+                                        <li><a class="dropdown-item" asp-controller="Roles" asp-action="Index">Roles</a></li>
+                                    }
+                                    @if (TienePermiso("Permisos", "Index"))
+                                    {
+                                        <li><a class="dropdown-item" asp-controller="Permisos" asp-action="Index">Permisos por Pantalla</a></li>
+                                    }
+                                    @if (TienePermiso("MetodosPago", "Index"))
+                                    {
+                                        <li><a class="dropdown-item" asp-controller="MetodosPago" asp-action="Index">Métodos de Pago</a></li>
+                                    }
+                                    @{
+                                        var tieneAlgunPermisoAntes = TienePermiso("Clientes", "Index") || TienePermiso("Proveedores", "Index") || TienePermiso("Usuarios", "Index") || TienePermiso("Roles", "Index") || TienePermiso("Permisos", "Index") || TienePermiso("MetodosPago", "Index");
+                                    }
+                                    @if (tieneAlgunPermisoAntes && TienePermiso("MovimientosInventario", "Index"))
+                                    {
+                                        <li><hr class="dropdown-divider"></li>
+                                    }
+                                    @if (TienePermiso("MovimientosInventario", "Index"))
+                                    {
+                                        <li><a class="dropdown-item" asp-controller="MovimientosInventario" asp-action="Index">Movimientos de Inventario</a></li>
+                                    }
+                                </ul>
+                            </li>
+                        }
+                    </ul>
+                    <ul class="navbar-nav">
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle text-dark" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-person-circle"></i> @Context.Session.GetString("UsuarioNombre")
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                                <li><span class="dropdown-item-text"><small>Rol: @rolNombre</small></span></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" asp-controller="Usuarios" asp-action="Perfil"><i class="bi bi-person-gear"></i> Perfil</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" asp-controller="Login" asp-action="Logout"><i class="bi bi-box-arrow-right"></i> Cerrar Sesión</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container">
+            &copy; 2026 - Distribuidora Solares
+        </div>
+    </footer>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

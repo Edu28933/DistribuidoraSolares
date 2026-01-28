@@ -1,0 +1,88 @@
+@model List<DistribuidoraSolares.Models.Caja>
+@{
+    ViewData["Title"] = "Gestión de Caja";
+}
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Gestión de Caja</h1>
+        @if (ViewBag.CajaAbierta == null)
+        {
+            <a asp-action="Abrir" class="btn btn-success">Abrir Caja</a>
+        }
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (ViewBag.CajaAbierta != null)
+    {
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5>Caja Abierta</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <strong>ID:</strong> @ViewBag.CajaAbierta.CajaId
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Saldo Inicial:</strong> Q@(((DistribuidoraSolares.Models.Caja)ViewBag.CajaAbierta).SaldoInicial.ToString("N2"))
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Fecha Apertura:</strong> @ViewBag.CajaAbierta.FechaApertura.ToString("g")
+                    </div>
+                    <div class="col-md-3">
+                        <form asp-action="Cerrar" method="post" onsubmit="return confirm('¿Está seguro de cerrar la caja?');">
+                            <button type="submit" class="btn btn-danger">Cerrar Caja</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <h3>Historial de Cajas</h3>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Fecha Apertura</th>
+                <th>Saldo Inicial</th>
+                <th>Fecha Cierre</th>
+                <th>Saldo Final</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var caja in Model.OrderByDescending(c => c.CajaId))
+            {
+                <tr>
+                    <td>@caja.CajaId</td>
+                    <td>@caja.FechaApertura.ToString("g")</td>
+                    <td>Q@(caja.SaldoInicial.ToString("N2"))</td>
+                    <td>@(caja.FechaCierre?.ToString("g") ?? "-")</td>
+                    <td>@(caja.SaldoFinal.HasValue ? $"Q{caja.SaldoFinal.Value.ToString("N2")}" : "-")</td>
+                    <td>
+                        <span class="badge @(caja.Estado == "ABIERTA" ? "bg-success" : "bg-secondary")">
+                            @caja.Estado
+                        </span>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

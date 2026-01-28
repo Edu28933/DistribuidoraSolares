@@ -1,0 +1,133 @@
+@model List<DistribuidoraSolares.Models.Producto>
+@{
+    ViewData["Title"] = "Productos";
+    var rolNombre = Context.Session.GetString("RolNombre") ?? "";
+    var esUsuarioNuevo = rolNombre.Equals("Usuario Nuevo", StringComparison.OrdinalIgnoreCase);
+}
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Productos</h1>
+        @if (!esUsuarioNuevo)
+        {
+            <a asp-action="Create" class="btn btn-primary">Nuevo Producto</a>
+        }
+    </div>
+
+    @if (esUsuarioNuevo)
+    {
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            <i class="bi bi-info-circle"></i> 
+            <strong>Cuenta Limitada:</strong> Actualmente solo puedes ver productos. 
+            Contacta a un administrador para obtener acceso completo al sistema.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <form asp-action="Index" method="get" class="mb-3">
+        <div class="input-group">
+            <input type="text" name="buscar" class="form-control" placeholder="Buscar productos..." value="@ViewBag.Buscar">
+            <button class="btn btn-outline-secondary" type="submit">Buscar</button>
+        </div>
+    </form>
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="alert alert-info">
+            <p>No hay productos registrados. <a asp-action="Create">Crea el primer producto</a></p>
+        </div>
+    }
+    else
+    {
+        var fotosPrincipales = ViewBag.FotosPrincipales as Dictionary<int, string> ?? new Dictionary<int, string>();
+        
+        <div class="row g-3">
+            @foreach (var producto in Model)
+            {
+                var stock = ViewBag.Stock != null && ((Dictionary<int, int>)ViewBag.Stock).ContainsKey(producto.ProductoId) 
+                    ? ((Dictionary<int, int>)ViewBag.Stock)[producto.ProductoId] 
+                    : 0;
+                
+                var fotoUrl = fotosPrincipales.ContainsKey(producto.ProductoId) 
+                    ? fotosPrincipales[producto.ProductoId] 
+                    : null;
+                
+                <div class="col-xl-3 col-lg-4 col-md-4 col-sm-6 mb-3">
+                    <div class="card h-100 shadow-sm" style="border: 2px solid #28a745; border-radius: 6px; transition: transform 0.2s; cursor: pointer;" 
+                         onmouseover="this.style.transform='scale(1.02)'" 
+                         onmouseout="this.style.transform='scale(1)'">
+                        <div class="position-relative" style="height: 200px; overflow: hidden; background-color: #f8f9fa; border-radius: 4px 4px 0 0;">
+                            @if (!string.IsNullOrEmpty(fotoUrl))
+                            {
+                                <img src="@fotoUrl" class="card-img-top" alt="@producto.Nombre" 
+                                     style="width: 100%; height: 100%; object-fit: cover;">
+                            }
+                            else
+                            {
+                                <div class="d-flex align-items-center justify-content-center h-100 text-muted">
+                                    <i class="bi bi-image" style="font-size: 3rem; opacity: 0.3;"></i>
+                                </div>
+                            }
+                            @if (stock <= producto.StockMinimo && stock > 0)
+                            {
+                                <span class="badge bg-warning position-absolute top-0 start-0 m-1" style="font-size: 0.65rem;">Stock Bajo</span>
+                            }
+                            else if (stock == 0)
+                            {
+                                <span class="badge bg-danger position-absolute top-0 start-0 m-1" style="font-size: 0.65rem;">Sin Stock</span>
+                            }
+                            @if (producto.Estado == "DISPONIBLE" && stock > 0)
+                            {
+                                <span class="badge bg-success position-absolute top-0 end-0 m-1" style="font-size: 0.65rem;">Disponible</span>
+                            }
+                        </div>
+                        <div class="card-body d-flex flex-column p-2">
+                            <div class="mb-1">
+                                <small class="text-muted d-block" style="font-size: 0.65rem; font-weight: 500;">@producto.Codigo</small>
+                                <h6 class="card-title mb-1 mt-1" style="font-size: 0.85rem; font-weight: 600; line-height: 1.2; min-height: 2rem; color: #333;">
+                                    @producto.Nombre
+                                </h6>
+                            </div>
+                            <div class="mt-auto">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="text-success fw-bold" style="font-size: 1.1rem; color: #ffc107 !important;">
+                                        Q@(producto.PrecioVenta.ToString("N2"))
+                                    </span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <small class="text-muted" style="font-size: 0.75rem;">
+                                        Stock: <strong class="@(stock <= producto.StockMinimo ? "text-danger" : "text-dark")">@stock</strong>
+                                    </small>
+                                    <small class="text-muted" style="font-size: 0.75rem;">@(producto.Categoria?.Nombre ?? "N/A")</small>
+                                </div>
+                                @if (!esUsuarioNuevo)
+                                {
+                                    <div class="d-grid gap-1 mt-1">
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a asp-action="Edit" asp-route-id="@producto.ProductoId" 
+                                               class="btn btn-warning flex-fill" style="font-size: 0.7rem; padding: 0.25rem 0.5rem;">
+                                                <i class="bi bi-pencil"></i> Editar
+                                            </a>
+                                            <a asp-action="Imagenes" asp-route-id="@producto.ProductoId" 
+                                               class="btn btn-info flex-fill" style="font-size: 0.7rem; padding: 0.25rem 0.5rem;">
+                                                <i class="bi bi-images"></i> Imágenes
+                                            </a>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

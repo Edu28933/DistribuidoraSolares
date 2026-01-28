@@ -1,0 +1,115 @@
+@{
+    ViewData["Title"] = "Imágenes del Producto";
+    var producto = ViewBag.Producto as DistribuidoraSolares.Models.Producto;
+    var fotos = ViewBag.Fotos as List<DistribuidoraSolares.Models.ProductoFoto> ?? new List<DistribuidoraSolares.Models.ProductoFoto>();
+}
+
+@if (producto == null)
+{
+    <div class="container">
+        <div class="alert alert-danger">
+            <h4>Error</h4>
+            <p>Producto no encontrado.</p>
+            <a asp-action="Index" class="btn btn-secondary">Volver a Productos</a>
+        </div>
+    </div>
+    return;
+}
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Imágenes del Producto: @producto.Nombre</h1>
+        <a asp-action="Index" class="btn btn-secondary">Volver a Productos</a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Subir Nueva Imagen</h5>
+        </div>
+        <div class="card-body">
+            <form asp-action="SubirImagen" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="productoId" value="@producto.ProductoId" />
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Seleccionar Imagen</label>
+                        <input type="file" name="archivo" class="form-control" accept="image/*" required />
+                        <small class="form-text text-muted">Formatos permitidos: JPG, PNG, GIF, WEBP (Máximo 10 MB)</small>
+                    </div>
+                    <div class="col-md-4 mb-3 d-flex align-items-end">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="esPrincipal" id="esPrincipal" value="true">
+                            <label class="form-check-label" for="esPrincipal">
+                                Marcar como principal
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-2 mb-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">Subir</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <h3>Imágenes Actuales</h3>
+    @if (!fotos.Any())
+    {
+        <div class="alert alert-info">
+            <p>No hay imágenes para este producto. Sube la primera imagen usando el formulario de arriba.</p>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var foto in fotos)
+            {
+                <div class="col-md-3 mb-4">
+                    <div class="card">
+                        <img src="@foto.UrlFoto" class="card-img-top" alt="Imagen del producto" style="height: 200px; object-fit: cover;">
+                        <div class="card-body">
+                            @if (foto.EsPrincipal)
+                            {
+                                <span class="badge bg-success mb-2">Principal</span>
+                            }
+                            <div class="d-flex gap-2">
+                                @if (!foto.EsPrincipal)
+                                {
+                                    <form asp-action="MarcarPrincipal" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="fotoId" value="@foto.FotoId" />
+                                        <input type="hidden" name="productoId" value="@producto.ProductoId" />
+                                        <button type="submit" class="btn btn-sm btn-warning">Marcar Principal</button>
+                                    </form>
+                                }
+                                <form asp-action="EliminarImagen" method="post" class="d-inline" onsubmit="return confirm('¿Está seguro de eliminar esta imagen?');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="fotoId" value="@foto.FotoId" />
+                                    <input type="hidden" name="productoId" value="@producto.ProductoId" />
+                                    <button type="submit" class="btn btn-sm btn-danger">Eliminar</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

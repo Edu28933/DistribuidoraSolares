@@ -1,0 +1,185 @@
+@{
+    ViewData["Title"] = "Nueva Reserva";
+    var productos = ViewBag.Productos as List<DistribuidoraSolares.Models.Producto> ?? new List<DistribuidoraSolares.Models.Producto>();
+    var clientes = ViewBag.Clientes as List<DistribuidoraSolares.Models.Cliente> ?? new List<DistribuidoraSolares.Models.Cliente>();
+    var stock = ViewBag.Stock as Dictionary<int, int> ?? new Dictionary<int, int>();
+}
+
+<div class="container">
+    <h1>Nueva Reserva</h1>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <form id="reservaForm" method="post">
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label class="form-label">Cliente</label>
+                <select name="ClienteId" class="form-select" required>
+                    <option value="">Seleccione un cliente</option>
+                    @foreach (var cliente in clientes)
+                    {
+                        <option value="@cliente.ClienteId">@cliente.Nombre</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Fecha de Vencimiento</label>
+                <input type="datetime-local" name="FechaVencimiento" class="form-control" required />
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Observación</label>
+            <textarea name="Observacion" class="form-control" rows="2"></textarea>
+        </div>
+
+        <input type="hidden" name="UsuarioId" value="@ViewBag.UsuarioId" />
+
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5>Detalle de Reserva</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Producto</label>
+                    <select id="productoSelect" class="form-select">
+                        <option value="">Seleccione un producto</option>
+                        @foreach (var producto in productos)
+                        {
+                            var stockActual = stock.ContainsKey(producto.ProductoId) ? stock[producto.ProductoId] : 0;
+                            <option value="@producto.ProductoId" 
+                                    data-stock="@stockActual"
+                                    data-nombre="@producto.Nombre">
+                                @producto.Nombre (Stock: @stockActual)
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Cantidad a Reservar</label>
+                        <input type="number" id="cantidadInput" class="form-control" min="1" value="1" />
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="button" class="btn btn-primary w-100" onclick="agregarProducto()">Agregar</button>
+                    </div>
+                </div>
+
+                <table class="table" id="detalleTable">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th>Cantidad Reservada</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-success">Crear Reserva</button>
+        <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        let detalleReserva = [];
+        let productosData = @Html.Raw(Json.Serialize(productos.Select(p => new { p.ProductoId, p.Nombre })));
+
+        function agregarProducto() {
+            const productoSelect = document.getElementById('productoSelect');
+            const cantidadInput = document.getElementById('cantidadInput');
+
+            const productoId = parseInt(productoSelect.value);
+            const cantidad = parseInt(cantidadInput.value);
+            const nombre = productoSelect.options[productoSelect.selectedIndex].dataset.nombre;
+            const stock = parseInt(productoSelect.options[productoSelect.selectedIndex].dataset.stock);
+
+            if (!productoId || cantidad <= 0) {
+                alert('Complete todos los campos correctamente');
+                return;
+            }
+
+            if (cantidad > stock) {
+                alert('La cantidad a reservar no puede ser mayor al stock disponible');
+                return;
+            }
+
+            // Verificar si el producto ya está en el detalle
+            const existe = detalleReserva.findIndex(item => item.ProductoId === productoId);
+            if (existe >= 0) {
+                const nuevaCantidad = detalleReserva[existe].CantidadReservada + cantidad;
+                if (nuevaCantidad > stock) {
+                    alert('La cantidad total reservada no puede ser mayor al stock disponible');
+                    return;
+                }
+                detalleReserva[existe].CantidadReservada = nuevaCantidad;
+            } else {
+                const item = {
+                    ProductoId: productoId,
+                    CantidadReservada: cantidad
+                };
+                detalleReserva.push(item);
+            }
+
+            actualizarTabla();
+            
+            productoSelect.value = '';
+            cantidadInput.value = 1;
+        }
+
+        function eliminarProducto(index) {
+            detalleReserva.splice(index, 1);
+            actualizarTabla();
+        }
+
+        function actualizarTabla() {
+            const tbody = document.querySelector('#detalleTable tbody');
+            tbody.innerHTML = '';
+
+            detalleReserva.forEach((item, index) => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${productosData.find(p => p.productoId === item.ProductoId)?.nombre || ''}</td>
+                    <td>${item.CantidadReservada}</td>
+                    <td><button type="button" class="btn btn-sm btn-danger" onclick="eliminarProducto(${index})">Eliminar</button></td>
+                `;
+            });
+        }
+
+        document.getElementById('reservaForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (detalleReserva.length === 0) {
+                alert('Debe agregar al menos un producto a la reserva');
+                return;
+            }
+
+            // Crear inputs ocultos para cada item del detalle
+            detalleReserva.forEach((item, index) => {
+                const inputProductoId = document.createElement('input');
+                inputProductoId.type = 'hidden';
+                inputProductoId.name = `Detalle[${index}].ProductoId`;
+                inputProductoId.value = item.ProductoId;
+                this.appendChild(inputProductoId);
+
+                const inputCantidadReservada = document.createElement('input');
+                inputCantidadReservada.type = 'hidden';
+                inputCantidadReservada.name = `Detalle[${index}].CantidadReservada`;
+                inputCantidadReservada.value = item.CantidadReservada;
+                this.appendChild(inputCantidadReservada);
+            });
+
+            this.submit();
+        });
+    </script>
+}

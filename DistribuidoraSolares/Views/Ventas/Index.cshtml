@@ -1,0 +1,289 @@
+@model List<DistribuidoraSolares.Models.Venta>
+@{
+    ViewData["Title"] = "Ventas";
+    var clientes = ViewBag.Clientes as List<DistribuidoraSolares.Models.Cliente> ?? new List<DistribuidoraSolares.Models.Cliente>();
+    var productos = ViewBag.Productos as List<DistribuidoraSolares.Models.Producto> ?? new List<DistribuidoraSolares.Models.Producto>();
+    var paginacion = ViewBag.Paginacion as DistribuidoraSolares.Helpers.PaginacionResult<DistribuidoraSolares.Models.Venta>;
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Ventas</h1>
+        <a asp-action="Create" class="btn btn-success">Nueva Venta</a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Filtros Avanzados -->
+    <div class="card mb-3">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <button class="btn btn-link text-decoration-none text-dark p-0" type="button" data-bs-toggle="collapse" data-bs-target="#filtrosAvanzados" aria-expanded="false">
+                    <i class="bi bi-funnel"></i> Filtros Avanzados
+                </button>
+            </h5>
+        </div>
+        <div class="collapse" id="filtrosAvanzados">
+            <div class="card-body">
+                <form asp-action="Index" method="get" id="filtrosForm">
+                    <input type="hidden" name="pagina" value="1" />
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Buscar</label>
+                            <input type="text" name="buscar" class="form-control" placeholder="Buscar ventas..." value="@ViewBag.Buscar">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Cliente</label>
+                            <select name="clienteId" class="form-select">
+                                <option value="">Todos los clientes</option>
+                                @foreach (var cliente in clientes)
+                                {
+                                    <option value="@cliente.ClienteId" selected="@(ViewBag.ClienteIdFiltro == cliente.ClienteId)">
+                                        @cliente.Nombre
+                                    </option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Producto</label>
+                            <select name="productoId" class="form-select">
+                                <option value="">Todos los productos</option>
+                                @foreach (var producto in productos)
+                                {
+                                    <option value="@producto.ProductoId" selected="@(ViewBag.ProductoIdFiltro == producto.ProductoId)">
+                                        @producto.Nombre
+                                    </option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Monto Mínimo</label>
+                            <input type="number" name="montoMin" class="form-control" step="0.01" min="0" value="@ViewBag.MontoMinFiltro">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Monto Máximo</label>
+                            <input type="number" name="montoMax" class="form-control" step="0.01" min="0" value="@ViewBag.MontoMaxFiltro">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Fecha Desde</label>
+                            <input type="date" name="fechaDesde" class="form-control" value="@(ViewBag.FechaDesdeFiltro?.ToString("yyyy-MM-dd"))">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Fecha Hasta</label>
+                            <input type="date" name="fechaHasta" class="form-control" value="@(ViewBag.FechaHastaFiltro?.ToString("yyyy-MM-dd"))">
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">Aplicar Filtros</button>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <a asp-action="Index" class="btn btn-secondary w-100">Limpiar Filtros</a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="alert alert-info">
+            <p>No hay ventas registradas. <a asp-action="Create">Crea la primera venta</a></p>
+        </div>
+    }
+    else
+    {
+        <!-- Información de paginación -->
+        @if (paginacion != null)
+        {
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <small class="text-muted">
+                        Mostrando @((paginacion.PaginaActual - 1) * paginacion.TamañoPagina + 1) - 
+                        @(Math.Min(paginacion.PaginaActual * paginacion.TamañoPagina, paginacion.TotalItems)) 
+                        de @paginacion.TotalItems ventas
+                    </small>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <label class="form-label mb-0">Resultados por página:</label>
+                    <select id="tamañoPaginaSelect" class="form-select form-select-sm" style="width: auto;">
+                        <option value="10" selected="@(paginacion.TamañoPagina == 10)">10</option>
+                        <option value="20" selected="@(paginacion.TamañoPagina == 20)">20</option>
+                        <option value="50" selected="@(paginacion.TamañoPagina == 50)">50</option>
+                        <option value="100" selected="@(paginacion.TamañoPagina == 100)">100</option>
+                    </select>
+                </div>
+            </div>
+        }
+
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Fecha</th>
+                        <th>Cliente</th>
+                        <th>Total</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var venta in Model)
+                    {
+                        <tr>
+                            <td>@venta.VentaId</td>
+                            <td>@venta.FechaHora.ToString("g")</td>
+                            <td>@(venta.Cliente?.Nombre ?? "Sin cliente")</td>
+                            <td>Q@(venta.TotalNeto.ToString("N2"))</td>
+                            <td>
+                                @if (venta.Estado == "ACTIVO")
+                                {
+                                    <span class="badge bg-success">@venta.Estado</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">@venta.Estado</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a asp-action="Detalle" asp-route-id="@venta.VentaId" class="btn btn-sm btn-info" title="Ver Detalle">
+                                        <i class="bi bi-eye"></i> Detalle
+                                    </a>
+                                    @if (venta.Estado == "ACTIVO")
+                                    {
+                                        <a asp-action="Edit" asp-route-id="@venta.VentaId" class="btn btn-sm btn-warning" title="Editar">
+                                            <i class="bi bi-pencil"></i> Editar
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#anularModal@(venta.VentaId)" title="Anular">
+                                            <i class="bi bi-x-circle"></i> Anular
+                                        </button>
+                                    }
+                                    <a asp-action="ImprimirFactura" asp-route-id="@venta.VentaId" target="_blank" class="btn btn-sm btn-primary" title="Imprimir">
+                                        <i class="bi bi-printer"></i> Imprimir
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        
+                        <!-- Modal para anular venta -->
+                        @if (venta.Estado == "ACTIVO")
+                        {
+                            <div class="modal fade" id="anularModal@(venta.VentaId)" tabindex="-1" aria-labelledby="anularModalLabel@(venta.VentaId)" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="anularModalLabel@(venta.VentaId)">Anular Venta #@venta.VentaId</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <form asp-action="Anular" asp-route-id="@venta.VentaId" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <div class="modal-body">
+                                                <p>¿Está seguro que desea anular esta venta?</p>
+                                                <div class="mb-3">
+                                                    <label for="motivoAnulacion@(venta.VentaId)" class="form-label">Motivo de anulación <span class="text-danger">*</span></label>
+                                                    <textarea name="motivoAnulacion" id="motivoAnulacion@(venta.VentaId)" class="form-control" rows="3" required placeholder="Explique el motivo de la anulación"></textarea>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                <button type="submit" class="btn btn-danger">Confirmar Anulación</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        @if (paginacion != null && paginacion.TotalPaginas > 1)
+        {
+            <nav aria-label="Paginación de ventas">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item @(!paginacion.TienePaginaAnterior ? "disabled" : "")">
+                        <a class="page-link" href="@Url.Action("Index", new { 
+                            buscar = ViewBag.Buscar, 
+                            clienteId = ViewBag.ClienteIdFiltro, 
+                            productoId = ViewBag.ProductoIdFiltro, 
+                            montoMin = ViewBag.MontoMinFiltro, 
+                            montoMax = ViewBag.MontoMaxFiltro, 
+                            fechaDesde = ViewBag.FechaDesdeFiltro, 
+                            fechaHasta = ViewBag.FechaHastaFiltro,
+                            pagina = paginacion.PaginaActual - 1, 
+                            tamañoPagina = paginacion.TamañoPagina 
+                        })">Anterior</a>
+                    </li>
+                    @for (int i = 1; i <= paginacion.TotalPaginas; i++)
+                    {
+                        if (i == paginacion.PaginaActual || i == 1 || i == paginacion.TotalPaginas || (i >= paginacion.PaginaActual - 2 && i <= paginacion.PaginaActual + 2))
+                        {
+                            <li class="page-item @(i == paginacion.PaginaActual ? "active" : "")">
+                                <a class="page-link" href="@Url.Action("Index", new { 
+                                    buscar = ViewBag.Buscar, 
+                                    clienteId = ViewBag.ClienteIdFiltro, 
+                                    productoId = ViewBag.ProductoIdFiltro, 
+                                    montoMin = ViewBag.MontoMinFiltro, 
+                                    montoMax = ViewBag.MontoMaxFiltro, 
+                                    fechaDesde = ViewBag.FechaDesdeFiltro, 
+                                    fechaHasta = ViewBag.FechaHastaFiltro,
+                                    pagina = i, 
+                                    tamañoPagina = paginacion.TamañoPagina 
+                                })">@i</a>
+                            </li>
+                        }
+                        else if (i == paginacion.PaginaActual - 3 || i == paginacion.PaginaActual + 3)
+                        {
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        }
+                    }
+                    <li class="page-item @(!paginacion.TienePaginaSiguiente ? "disabled" : "")">
+                        <a class="page-link" href="@Url.Action("Index", new { 
+                            buscar = ViewBag.Buscar, 
+                            clienteId = ViewBag.ClienteIdFiltro, 
+                            productoId = ViewBag.ProductoIdFiltro, 
+                            montoMin = ViewBag.MontoMinFiltro, 
+                            montoMax = ViewBag.MontoMaxFiltro, 
+                            fechaDesde = ViewBag.FechaDesdeFiltro, 
+                            fechaHasta = ViewBag.FechaHastaFiltro,
+                            pagina = paginacion.PaginaActual + 1, 
+                            tamañoPagina = paginacion.TamañoPagina 
+                        })">Siguiente</a>
+                    </li>
+                </ul>
+            </nav>
+        }
+    }
+</div>
+
+@section Scripts {
+    <script>
+        // Cambiar tamaño de página
+        document.getElementById('tamañoPaginaSelect')?.addEventListener('change', function() {
+            const tamañoPagina = this.value;
+            const url = new URL(window.location.href);
+            url.searchParams.set('tamañoPagina', tamañoPagina);
+            url.searchParams.set('pagina', '1');
+            window.location.href = url.toString();
+        });
+    </script>
+}

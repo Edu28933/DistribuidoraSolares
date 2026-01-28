@@ -1,0 +1,108 @@
+@model DistribuidoraSolares.Models.Producto
+@{
+    ViewData["Title"] = "Nuevo Producto";
+    var categorias = ViewBag.Categorias as List<DistribuidoraSolares.Models.Categoria> ?? new List<DistribuidoraSolares.Models.Categoria>();
+}
+
+<div class="container">
+    <h1>Nuevo Producto</h1>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <form asp-action="Create" method="post" id="productoForm">
+        <div class="mb-3">
+            <label asp-for="CategoriaId" class="form-label">Categoría</label>
+            <select asp-for="CategoriaId" id="categoriaSelect" class="form-select" required>
+                <option value="">Seleccione una categoría</option>
+                @foreach (var categoria in categorias)
+                {
+                    <option value="@categoria.CategoriaId">@categoria.Nombre</option>
+                }
+            </select>
+            <span asp-validation-for="CategoriaId" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Codigo" class="form-label">Código <small class="text-muted">(se genera automáticamente)</small></label>
+            <input asp-for="Codigo" id="codigoInput" class="form-control" readonly />
+            <span asp-validation-for="Codigo" class="text-danger"></span>
+            <small class="form-text text-muted">El código se generará automáticamente al seleccionar una categoría (ej: sub_001, sub_002, etc.)</small>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Nombre" class="form-label">Nombre</label>
+            <input asp-for="Nombre" class="form-control" required />
+            <span asp-validation-for="Nombre" class="text-danger"></span>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label asp-for="PrecioVenta" class="form-label">Precio de Venta</label>
+                <input asp-for="PrecioVenta" type="number" step="0.01" class="form-control" required />
+                <span asp-validation-for="PrecioVenta" class="text-danger"></span>
+            </div>
+
+            <div class="col-md-6 mb-3">
+                <label asp-for="CostoReferencia" class="form-label">Costo de Referencia</label>
+                <input asp-for="CostoReferencia" type="number" step="0.01" class="form-control" required />
+                <span asp-validation-for="CostoReferencia" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="StockMinimo" class="form-label">Stock Mínimo</label>
+            <input asp-for="StockMinimo" type="number" class="form-control" value="0" />
+            <span asp-validation-for="StockMinimo" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Estado" class="form-label">Estado</label>
+            <select asp-for="Estado" class="form-select">
+                <option value="DISPONIBLE">DISPONIBLE</option>
+                <option value="NO_DISPONIBLE">NO_DISPONIBLE</option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Guardar</button>
+        <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('categoriaSelect').addEventListener('change', async function() {
+            const categoriaId = this.value;
+            const codigoInput = document.getElementById('codigoInput');
+            
+            if (categoriaId) {
+                codigoInput.disabled = true;
+                codigoInput.value = 'Generando...';
+                
+                try {
+                    const response = await fetch(`/Productos/GenerarCodigo?categoriaId=${categoriaId}`);
+                    const data = await response.json();
+                    
+                    if (data.codigo) {
+                        codigoInput.value = data.codigo;
+                    } else if (data.error) {
+                        alert('Error al generar código: ' + data.error);
+                        codigoInput.value = '';
+                    }
+                } catch (error) {
+                    alert('Error al generar código: ' + error.message);
+                    codigoInput.value = '';
+                } finally {
+                    codigoInput.disabled = false;
+                }
+            } else {
+                codigoInput.value = '';
+            }
+        });
+    </script>
+}

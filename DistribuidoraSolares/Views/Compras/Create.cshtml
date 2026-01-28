@@ -1,0 +1,200 @@
+@{
+    ViewData["Title"] = "Nueva Compra";
+    var productos = ViewBag.Productos as List<DistribuidoraSolares.Models.Producto> ?? new List<DistribuidoraSolares.Models.Producto>();
+    var proveedores = ViewBag.Proveedores as List<DistribuidoraSolares.Models.Proveedor> ?? new List<DistribuidoraSolares.Models.Proveedor>();
+}
+
+<div class="container">
+    <h1>Nueva Compra</h1>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <form id="compraForm" method="post">
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <label class="form-label">Proveedor</label>
+                <select name="ProveedorId" class="form-select" required>
+                    <option value="">Seleccione un proveedor</option>
+                    @foreach (var proveedor in proveedores)
+                    {
+                        <option value="@proveedor.ProveedorId">@proveedor.Nombre</option>
+                    }
+                </select>
+            </div>
+        </div>
+
+        <input type="hidden" name="UsuarioId" value="@ViewBag.UsuarioId" />
+
+        <div class="card mb-3">
+            <div class="card-header">
+                <h5>Detalle de Compra</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Producto</label>
+                    <select id="productoSelect" class="form-select">
+                        <option value="">Seleccione un producto</option>
+                        @foreach (var producto in productos)
+                        {
+                            <option value="@producto.ProductoId" 
+                                    data-costo="@producto.CostoReferencia" 
+                                    data-nombre="@producto.Nombre">
+                                @producto.Nombre - Costo Ref: Q@(producto.CostoReferencia.ToString("N2"))
+                            </option>
+                        }
+                    </select>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Cantidad</label>
+                        <input type="number" id="cantidadInput" class="form-control" min="1" value="1" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Costo Unitario</label>
+                        <input type="number" id="costoInput" class="form-control" step="0.01" />
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="button" class="btn btn-primary w-100" onclick="agregarProducto()">Agregar</button>
+                    </div>
+                </div>
+
+                <table class="table" id="detalleTable">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th>Cantidad</th>
+                            <th>Costo Unitario</th>
+                            <th>Subtotal</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                    <tfoot>
+                        <tr>
+                            <th colspan="3" class="text-end">Total:</th>
+                            <th id="totalCompra">Q0.00</th>
+                            <th></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-success">Registrar Compra</button>
+        <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        let detalleCompra = [];
+        let productosData = @Html.Raw(Json.Serialize(productos.Select(p => new { p.ProductoId, p.Nombre, p.CostoReferencia })));
+
+        function agregarProducto() {
+            const productoSelect = document.getElementById('productoSelect');
+            const cantidadInput = document.getElementById('cantidadInput');
+            const costoInput = document.getElementById('costoInput');
+
+            const productoId = parseInt(productoSelect.value);
+            const cantidad = parseInt(cantidadInput.value);
+            const costo = parseFloat(costoInput.value || productoSelect.options[productoSelect.selectedIndex].dataset.costo);
+            const nombre = productoSelect.options[productoSelect.selectedIndex].dataset.nombre;
+
+            if (!productoId || cantidad <= 0 || costo <= 0) {
+                alert('Complete todos los campos correctamente');
+                return;
+            }
+
+            // Verificar si el producto ya está en el detalle
+            const existe = detalleCompra.findIndex(item => item.ProductoId === productoId);
+            if (existe >= 0) {
+                detalleCompra[existe].Cantidad += cantidad;
+                detalleCompra[existe].CostoUnitario = costo;
+            } else {
+                const item = {
+                    ProductoId: productoId,
+                    Cantidad: cantidad,
+                    CostoUnitario: costo
+                };
+                detalleCompra.push(item);
+            }
+
+            actualizarTabla();
+            
+            productoSelect.value = '';
+            cantidadInput.value = 1;
+            costoInput.value = '';
+        }
+
+        function eliminarProducto(index) {
+            detalleCompra.splice(index, 1);
+            actualizarTabla();
+        }
+
+        function actualizarTabla() {
+            const tbody = document.querySelector('#detalleTable tbody');
+            tbody.innerHTML = '';
+
+            let total = 0;
+            detalleCompra.forEach((item, index) => {
+                const subtotal = item.Cantidad * item.CostoUnitario;
+                total += subtotal;
+
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${productosData.find(p => p.productoId === item.ProductoId)?.nombre || ''}</td>
+                    <td>${item.Cantidad}</td>
+                    <td>Q${item.CostoUnitario.toFixed(2)}</td>
+                    <td>Q${subtotal.toFixed(2)}</td>
+                    <td><button type="button" class="btn btn-sm btn-danger" onclick="eliminarProducto(${index})">Eliminar</button></td>
+                `;
+            });
+
+            document.getElementById('totalCompra').textContent = `Q${total.toFixed(2)}`;
+        }
+
+        document.getElementById('productoSelect').addEventListener('change', function() {
+            const costo = this.options[this.selectedIndex].dataset.costo;
+            document.getElementById('costoInput').value = costo;
+        });
+
+        document.getElementById('compraForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (detalleCompra.length === 0) {
+                alert('Debe agregar al menos un producto a la compra');
+                return;
+            }
+
+            // Crear inputs ocultos para cada item del detalle
+            detalleCompra.forEach((item, index) => {
+                const inputProductoId = document.createElement('input');
+                inputProductoId.type = 'hidden';
+                inputProductoId.name = `Detalle[${index}].ProductoId`;
+                inputProductoId.value = item.ProductoId;
+                this.appendChild(inputProductoId);
+
+                const inputCantidad = document.createElement('input');
+                inputCantidad.type = 'hidden';
+                inputCantidad.name = `Detalle[${index}].Cantidad`;
+                inputCantidad.value = item.Cantidad;
+                this.appendChild(inputCantidad);
+
+                const inputCostoUnitario = document.createElement('input');
+                inputCostoUnitario.type = 'hidden';
+                inputCostoUnitario.name = `Detalle[${index}].CostoUnitario`;
+                inputCostoUnitario.value = item.CostoUnitario;
+                this.appendChild(inputCostoUnitario);
+            });
+
+            this.submit();
+        });
+    </script>
+}

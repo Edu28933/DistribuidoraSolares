@@ -1,0 +1,78 @@
+@model List<DistribuidoraSolares.Models.Cliente>
+@{
+    ViewData["Title"] = "Clientes";
+}
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Clientes</h1>
+        <a asp-action="Create" class="btn btn-primary">Nuevo Cliente</a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <form asp-action="Index" method="get" class="mb-3">
+        <div class="input-group">
+            <input type="text" name="buscar" class="form-control" placeholder="Buscar clientes..." value="@ViewBag.Buscar">
+            <button class="btn btn-outline-secondary" type="submit">Buscar</button>
+        </div>
+    </form>
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="alert alert-info">
+            <p>No hay clientes registrados. <a asp-action="Create">Crea el primer cliente</a></p>
+        </div>
+    }
+    else
+    {
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Teléfono</th>
+                    <th>NIT</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var cliente in Model)
+                {
+                    <tr>
+                        <td>@cliente.ClienteId</td>
+                        <td>@cliente.Nombre</td>
+                        <td>@(cliente.Telefono ?? "-")</td>
+                        <td>@(cliente.Nit ?? "-")</td>
+                        <td>
+                            <span class="badge @(cliente.Estado == "ACTIVO" ? "bg-success" : "bg-secondary")">
+                                @cliente.Estado
+                            </span>
+                        </td>
+                        <td>
+                            <a asp-action="Edit" asp-route-id="@cliente.ClienteId" class="btn btn-sm btn-warning">Editar</a>
+                            <form asp-action="Delete" asp-route-id="@cliente.ClienteId" method="post" class="d-inline" onsubmit="return confirm('¿Está seguro de eliminar este cliente?');">
+                                <button type="submit" class="btn btn-sm btn-danger">Eliminar</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>

@@ -1,0 +1,142 @@
+@model List<DistribuidoraSolares.Models.StockPorSucursal>
+@{
+    ViewData["Title"] = "Stock por Sucursal";
+    var sucursales = ViewBag.Sucursales as List<DistribuidoraSolares.Models.Sucursal> ?? new List<DistribuidoraSolares.Models.Sucursal>();
+    var sucursalIdSeleccionada = ViewBag.SucursalIdSeleccionada as int?;
+}
+
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-12">
+            <h1>Stock por Sucursal</h1>
+            <p class="text-muted">Vista consolidada del stock de productos en cada sucursal</p>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <form asp-action="Index" method="get" class="d-flex gap-2">
+                <select name="sucursalId" class="form-select" onchange="this.form.submit()">
+                    <option value="">Todas las Sucursales</option>
+                    @foreach (var sucursal in sucursales)
+                    {
+                        <option value="@sucursal.SucursalId" selected="@(sucursalIdSeleccionada == sucursal.SucursalId)">
+                            @sucursal.Nombre
+                        </option>
+                    }
+                </select>
+            </form>
+        </div>
+    </div>
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="alert alert-info">
+            <p>No hay stock disponible para mostrar.</p>
+        </div>
+    }
+    else
+    {
+        @if (sucursalIdSeleccionada.HasValue)
+        {
+            // Vista de una sucursal específica
+            var sucursalNombre = sucursales.FirstOrDefault(s => s.SucursalId == sucursalIdSeleccionada.Value)?.Nombre ?? "Sucursal";
+            <h3>Stock de: @sucursalNombre</h3>
+            
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Código</th>
+                            <th>Producto</th>
+                            <th>Stock Actual</th>
+                            <th>Stock Mínimo</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            var estadoStock = item.Stock == 0 ? "danger" : (item.Stock <= item.StockMinimo ? "warning" : "success");
+                            var textoEstado = item.Stock == 0 ? "Sin Stock" : (item.Stock <= item.StockMinimo ? "Stock Bajo" : "Disponible");
+                            
+                            <tr>
+                                <td>@item.Codigo</td>
+                                <td>@item.Nombre</td>
+                                <td>
+                                    <span class="badge bg-@estadoStock">@item.Stock</span>
+                                </td>
+                                <td>@item.StockMinimo</td>
+                                <td>
+                                    <span class="badge bg-@estadoStock">@textoEstado</span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            // Vista consolidada de todas las sucursales
+            <h3>Stock Consolidado - Todas las Sucursales</h3>
+            
+            // Agrupar por producto
+            var productosAgrupados = Model.GroupBy(s => new { s.ProductoId, s.Codigo, s.Nombre, s.StockMinimo })
+                                          .OrderBy(g => g.Key.Nombre);
+            
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Código</th>
+                            <th>Producto</th>
+                            <th>Stock Mínimo</th>
+                            @foreach (var sucursal in sucursales.Where(s => s.Estado == "ACTIVO"))
+                            {
+                                <th class="text-center">@sucursal.Nombre</th>
+                            }
+                            <th class="text-center">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var grupo in productosAgrupados)
+                        {
+                            var stockPorSucursalDict = grupo.ToDictionary(s => s.SucursalId ?? 0, s => s.Stock);
+                            var totalStock = grupo.Sum(s => s.Stock);
+                            
+                            <tr>
+                                <td>@grupo.Key.Codigo</td>
+                                <td>@grupo.Key.Nombre</td>
+                                <td>@grupo.Key.StockMinimo</td>
+                                @foreach (var sucursal in sucursales.Where(s => s.Estado == "ACTIVO"))
+                                {
+                                    var stock = stockPorSucursalDict.ContainsKey(sucursal.SucursalId) 
+                                        ? stockPorSucursalDict[sucursal.SucursalId] 
+                                        : 0;
+                                    var estadoStock = stock == 0 ? "danger" : (stock <= grupo.Key.StockMinimo ? "warning" : "success");
+                                    
+                                    <td class="text-center">
+                                        <span class="badge bg-@estadoStock">@stock</span>
+                                    </td>
+                                }
+                                <td class="text-center">
+                                    <strong>@totalStock</strong>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    }
+</div>
+
+@section Scripts {
+    <script>
+        // Auto-submit cuando cambia la selección de sucursal
+        document.querySelector('select[name="sucursalId"]').addEventListener('change', function() {
+            this.form.submit();
+        });
+    </script>
+}
