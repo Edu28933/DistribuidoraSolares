@@ -204,27 +204,6 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
-    <script>
-        // Cerrar sesión cuando se cierra la última pestaña donde el usuario tenía sesión activa
-        (function () {
-            var tabCountKey = 'DistribuidoraSolares_TabCount';
-            var logoutUrl = '@Url.Action("LogoutFromTab", "Login")';
-
-            function getCount() { return parseInt(localStorage.getItem(tabCountKey) || '0', 10); }
-            function setCount(n) { localStorage.setItem(tabCountKey, Math.max(0, n)); }
-
-            // Nueva pestaña/página cargada con sesión activa: sumar una pestaña (localStorage compartido entre pestañas)
-            setCount(getCount() + 1);
-
-            window.addEventListener('beforeunload', function () {
-                var n = getCount() - 1;
-                setCount(n);
-                if (n <= 0 && navigator.sendBeacon) {
-                    navigator.sendBeacon(logoutUrl);
-                }
-            });
-        })();
-    </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
