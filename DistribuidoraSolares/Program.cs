@@ -1,3 +1,5 @@
+using System.Net;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using DistribuidoraSolares.Data;
 using DistribuidoraSolares.Services;
@@ -19,9 +21,11 @@ builder.Services.AddSession(options =>
     options.IdleTimeout = TimeSpan.FromMinutes(30);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
-    // Para que la sesión persista al navegar en Azure/HTTPS (evitar redirección al login)
     options.Cookie.SameSite = SameSiteMode.Lax;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    // En Azure el balanceador termina HTTPS; la cookie debe ser Secure para que el navegador la envíe
+    options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
+        ? CookieSecurePolicy.SameAsRequest
+        : CookieSecurePolicy.Always;
 });
 
 // Configure Entity Framework
@@ -59,11 +63,22 @@ builder.Services.AddScoped<IPermisoPantallaService, PermisoPantallaService>();
 
 var app = builder.Build();
 
+// En Azure el balanceador termina HTTPS y reenvía como HTTP; hay que confiar en X-Forwarded-Proto
+var forwardedOptions = new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+};
+forwardedOptions.KnownProxies.Clear();
+forwardedOptions.KnownProxies.Add(IPAddress.Loopback);
+forwardedOptions.KnownNetworks.Clear();
+forwardedOptions.KnownNetworks.Add(new Microsoft.AspNetCore.HttpOverrides.IPNetwork(IPAddress.Loopback, 8)); // 127.0.0.0/8
+forwardedOptions.KnownNetworks.Add(new Microsoft.AspNetCore.HttpOverrides.IPNetwork(IPAddress.Parse("10.0.0.0"), 8)); // Azure interno
+app.UseForwardedHeaders(forwardedOptions);
+
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
